@@ -1945,6 +1945,23 @@ function handleCallEnd() {
   }
 }
 
+function checkCallSupport() {
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
+  const isHTTPS = window.location.protocol === 'https:';
+  
+  if (!isLocalhost && !isHTTPS) {
+    callAudioBtn.disabled = true;
+    callVideoBtn.disabled = true;
+    callAudioBtn.title = 'Chamadas requerem HTTPS';
+    callVideoBtn.title = 'Chamadas requerem HTTPS';
+    callAudioBtn.style.opacity = '0.5';
+    callVideoBtn.style.opacity = '0.5';
+  }
+}
+
+checkCallSupport();
+
 callAudioBtn.addEventListener('click', () => startCall('audio'));
 callVideoBtn.addEventListener('click', () => startCall('video'));
 
