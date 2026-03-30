@@ -1,0 +1,20 @@
+{
+  "name": "CHATBOX",
+  "short_name": "CHATBOX",
+  "description": "Chat local P2P para rede WiFi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#00a884",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "communication"],
+  "lang": "pt-BR"
+}
