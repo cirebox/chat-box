@@ -77,6 +77,7 @@ const endCallBtn = document.getElementById('end-call-btn');
 const emojiBtn = document.getElementById('emoji-btn');
 const emojiPicker = document.getElementById('emoji-picker');
 const emojiGrid = document.getElementById('emoji-grid');
+const emojiSearchInput = document.getElementById('emoji-search-input');
 
 const EMOJI_CATEGORIES = {
   recent: ['👍', '❤️', '😊', '😂', '😘', '😍', '🎉', '🔥', '💯', '🙏', '👋', '😊', '😁', '😍', '🤔', '😅'],
@@ -111,6 +112,28 @@ function insertEmoji(emoji) {
   messageInput.value = text.substring(0, start) + emoji + text.substring(end);
   messageInput.focus();
   messageInput.setSelectionRange(start + emoji.length, start + emoji.length);
+  emojiPicker.classList.add('hidden');
+}
+
+function searchEmojis(query) {
+  const allEmojis = [];
+  const searchTerms = {
+    smileys: ['happy', 'sad', 'angry', 'love', 'kiss', 'laugh', 'smile', 'cry', 'face', 'emotion'],
+    animals: ['dog', 'cat', 'bird', 'fish', 'animal', 'pet', 'monkey', 'bear', 'lion', 'tiger'],
+    food: ['food', 'eat', 'fruit', 'apple', 'pizza', 'burger', 'coffee', 'drink', 'cake', 'ice'],
+    activities: ['sport', 'game', 'ball', 'football', 'music', 'play', 'run', 'swim', 'dance', 'music'],
+    travel: ['car', 'plane', 'train', 'bus', 'boat', 'travel', 'road', 'bike', 'sun', 'moon'],
+    objects: ['phone', 'computer', 'camera', 'book', 'light', 'money', 'clock', 'gift', 'tool', 'house'],
+    symbols: ['heart', 'star', 'fire', 'check', 'like', ' thumbs', 'heart', 'club', 'diamond']
+  };
+  
+  Object.keys(EMOJI_CATEGORIES).forEach(cat => {
+    if (cat !== 'recent') {
+      EMOJI_CATEGORIES[cat].forEach(emoji => allEmojis.push(emoji));
+    }
+  });
+  
+  return allEmojis.slice(0, 48);
 }
 
 function toggleEmojiPicker() {
@@ -128,6 +151,30 @@ document.querySelectorAll('.emoji-tab').forEach(tab => {
 });
 
 renderEmojis('recent');
+
+emojiSearchInput.addEventListener('input', (e) => {
+  const query = e.target.value.toLowerCase();
+  if (query.length === 0) {
+    renderEmojis(currentEmojiCategory);
+    return;
+  }
+  
+  const allEmojis = [];
+  Object.keys(EMOJI_CATEGORIES).forEach(cat => {
+    if (cat !== 'recent') {
+      EMOJI_CATEGORIES[cat].forEach(emoji => allEmojis.push(emoji));
+    }
+  });
+  
+  emojiGrid.innerHTML = '';
+  allEmojis.slice(0, 48).forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.className = 'emoji-btn';
+    btn.textContent = emoji;
+    btn.onclick = () => insertEmoji(emoji);
+    emojiGrid.appendChild(btn);
+  });
+});
 
 let allMessages = [];
 let lastReadMessageId = null;

@@ -1109,6 +1109,25 @@ body.keyboard-open .messages-container {
   animation: slideUp 0.2s ease-out;
 }
 
+.emoji-search {
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.emoji-search input {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 20px;
+  background: #f0f2f5;
+  font-size: 14px;
+  outline: none;
+}
+
+.emoji-search input:focus {
+  background: #e4e6eb;
+}
+
 @keyframes slideUp {
   from {
     transform: translateY(100%);
