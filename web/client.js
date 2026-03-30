@@ -551,3 +551,53 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => console.log('SW registrado:', reg.scope))
+      .catch((err) => console.log('SW erro:', err));
+  });
+}
+
+const pwaBanner = document.getElementById('pwa-banner');
+const pwaInstallBtn = document.getElementById('pwa-install-btn');
+const pwaCloseBtn = document.getElementById('pwa-close-btn');
+
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone === true;
+  
+  if (!isStandalone && localStorage.getItem('pwa_dismissed') !== 'true') {
+    pwaBanner.classList.remove('hidden');
+  }
+});
+
+pwaInstallBtn.addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      document.body.classList.add('pwa-installed');
+    }
+    deferredPrompt = null;
+    pwaBanner.classList.add('hidden');
+  }
+});
+
+pwaCloseBtn.addEventListener('click', () => {
+  pwaBanner.classList.add('hidden');
+  localStorage.setItem('pwa_dismissed', 'true');
+});
+
+window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
+  if (e.matches) {
+    document.body.classList.add('pwa-installed');
+    pwaBanner.classList.add('hidden');
+  }
+});

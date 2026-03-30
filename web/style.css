@@ -26,6 +26,50 @@ body {
 
 .hidden { display: none !important; }
 
+.pwa-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #00a884, #00897b);
+  color: white;
+  font-size: 14px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.pwa-banner.hidden {
+  display: none;
+}
+
+.pwa-banner button {
+  background: white;
+  color: #00a884;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pwa-banner .pwa-close {
+  background: transparent;
+  color: white;
+  font-size: 20px;
+  padding: 0 8px;
+  margin-left: auto;
+}
+
+body.pwa-installed .pwa-banner {
+  display: none;
+}
+
 /* Login Screen */
 .screen {
   height: 100vh;
