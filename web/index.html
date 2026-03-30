@@ -81,6 +81,9 @@
       <div id="messages" class="messages-container hidden"></div>
 
       <div class="chat-input-area hidden" id="chat-input-area">
+        <button type="button" id="emoji-btn" class="input-action-btn" title="Emojis">
+          <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-4-8c.79 0 1.5-.71 1.5-1.5S8.79 9 8 9s-1.5.71-1.5 1.5S7.21 12 8 12zm8 0c.79 0 1.5-.71 1.5-1.5S16.79 9 16 9s-1.5.71-1.5 1.5.71 1.5 1.5 1.5zm-4 5.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+        </button>
         <label for="file-input" class="input-action-btn" title="Enviar imagem">
           <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M1.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z"/></svg>
         </label>
@@ -144,6 +147,20 @@
       <div id="search-results" class="search-results"></div>
       <button id="close-search" class="close-btn">Fechar</button>
     </div>
+  </div>
+
+  <div id="emoji-picker" class="emoji-picker hidden">
+    <div class="emoji-tabs">
+      <button class="emoji-tab active" data-category="recent">🕐</button>
+      <button class="emoji-tab" data-category="smileys">😀</button>
+      <button class="emoji-tab" data-category="animals">🐶</button>
+      <button class="emoji-tab" data-category="food">🍔</button>
+      <button class="emoji-tab" data-category="activities">⚽</button>
+      <button class="emoji-tab" data-category="travel">🚗</button>
+      <button class="emoji-tab" data-category="objects">💡</button>
+      <button class="emoji-tab" data-category="symbols">❤️</button>
+    </div>
+    <div id="emoji-grid" class="emoji-grid"></div>
   </div>
 
   <div id="incoming-call-modal" class="modal hidden">

@@ -1093,3 +1093,86 @@ body.keyboard-open .messages-container {
 .call-control-btn.end-call:hover {
   background: #c62828;
 }
+
+/* Emoji Picker */
+.emoji-picker {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  max-height: 60vh;
+  z-index: 1000;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.emoji-picker.hidden {
+  display: none;
+}
+
+.emoji-tabs {
+  display: flex;
+  padding: 8px 4px;
+  border-bottom: 1px solid #e0e0e0;
+  overflow-x: auto;
+  gap: 4px;
+}
+
+.emoji-tab {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.emoji-tab:hover {
+  background: #f0f0f0;
+}
+
+.emoji-tab.active {
+  background: #e8f5f3;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  padding: 12px;
+  overflow-y: auto;
+  max-height: 45vh;
+}
+
+.emoji-btn {
+  font-size: 1.6rem;
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.emoji-btn:hover {
+  background: #f0f0f0;
+  transform: scale(1.2);
+}
+
+.emoji-btn:active {
+  transform: scale(0.9);
+}
