@@ -76,7 +76,20 @@ const toggleVideoBtn = document.getElementById('toggle-video-btn');
 const endCallBtn = document.getElementById('end-call-btn');
 
 let allMessages = [];
+let lastReadMessageId = null;
 let peerConnection = null;
+let messageAudio = null;
+
+function playMessageSound() {
+  try {
+    if (!messageAudio) {
+      messageAudio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQsMLpfg7oNqBAo2i+Tz4IhVBQ4vhuXu0p5UBAomiOHpwp5PBRAdh9/q0aFPBBAbfNvr06RPBBcZetjr06ROBBcZetjr06ROBBcZetjr06ROBBcZetjr06ROBBcZetjr06ROBBcZetjr06ROBBcZetjr06ROBBcZetjr06ROBBcZetjr06ROBBcZetjr06ROBBcZetjr06ROBBcZetjr06ROBBcZetjr06ROBBcZetjr0KJKCB4ZdNrs0qROBhkYeNfr0qRPBhcZetjr0qROBBcZetjr0qROBBcZetjr0qROBBcZetjr0qROBBcZetjr0qROBBcZetjr0qROBBcZetjr0qROBBcZetjr0qROBBcZetjr0qROBBcZetjr0qROBBcZetjr0qROBBcZetjr0qROBBcZetjr0qROBBcZetjr0KJGCR0ZdNTr0qROCBgYeNfr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0KJGCRwZdNTr0qROCBgYeNfr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBcZetjr0qROCBgYeNfr0qRO');
+    }
+    messageAudio.volume = 0.3;
+    messageAudio.currentTime = 0;
+    messageAudio.play().catch(() => {});
+  } catch (e) {}
+}
 let localStream = null;
 let isInCall = false;
 let isMuted = false;
@@ -217,6 +230,16 @@ function handleMessage(msg) {
     case 'call_end':
       handleCallEnd();
       break;
+      
+    case 'message_read':
+      const ownMessages = allMessages.filter(m => m.is_own);
+      ownMessages.forEach(m => {
+        if (m.element) {
+          m.element.classList.add('read');
+        }
+        m.status = 'read';
+      });
+      break;
   }
 }
 
@@ -242,7 +265,11 @@ function addMessage(msg) {
   
   const div = document.createElement('div');
   const isOwn = msg.is_own || msg.device_id === deviceId;
-  div.className = `message ${isOwn ? 'own' : 'other'}`;
+  let statusClass = '';
+  if (isOwn) {
+    statusClass = msg.status === 'read' ? 'own read' : 'own sent';
+  }
+  div.className = `message ${isOwn ? 'own' : 'other'} ${statusClass}`;
   
   const time = msgDate.toLocaleTimeString('pt-BR', { 
     hour: '2-digit', 
@@ -285,6 +312,29 @@ function addMessage(msg) {
   msg.element = div;
   allMessages.push(msg);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  
+  if (!isOwn) {
+    playMessageSound();
+    sendReadReceipt(msg.id);
+  }
+}
+
+function sendReadReceipt(messageId) {
+  if (ws && ws.readyState === WebSocket.OPEN && messageId) {
+    ws.send(JSON.stringify({
+      type: 'message_read',
+      message_id: messageId
+    }));
+  }
+}
+
+function markMessagesAsRead() {
+  const unreadMessages = allMessages.filter(m => !m.is_own && m.id !== lastReadMessageId);
+  if (unreadMessages.length > 0) {
+    const lastMsg = unreadMessages[unreadMessages.length - 1];
+    lastReadMessageId = lastMsg.id;
+    sendReadReceipt(lastMsg.id);
+  }
 }
 
 function formatDateDivider(date) {
@@ -425,6 +475,17 @@ messagesDiv.addEventListener('click', (e) => {
     e.stopPropagation();
     copyToClipboard(codeEl.textContent, codeEl);
   }
+});
+
+messagesDiv.addEventListener('scroll', () => {
+  const scrollBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight;
+  if (scrollBottom < 100) {
+    markMessagesAsRead();
+  }
+});
+
+messageInput.addEventListener('focus', () => {
+  markMessagesAsRead();
 });
 
 messageInput.addEventListener('input', () => {

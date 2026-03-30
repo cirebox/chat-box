@@ -452,13 +452,19 @@ body.keyboard-open .messages-container {
   gap: 4px;
 }
 
-.message .message-time::before {
+.message.own .message-time::before {
   content: '✓';
   font-size: 0.8rem;
+  color: var(--wa-text-secondary);
 }
 
-.message.own .message-time::before {
+.message.own.sent .message-time::before {
+  content: '✓';
+}
+
+.message.own.read .message-time::before {
   content: '✓✓';
+  color: #53bdeb;
 }
 
 .message .message-image {

@@ -219,6 +219,14 @@ wss.on('connection', (ws, req) => {
             from_id: clientId
           });
           break;
+
+        case 'message_read':
+          broadcastToOthers(ws, clientId, {
+            type: 'message_read',
+            message_id: msg.message_id,
+            reader_id: clientId
+          });
+          break;
       }
     } catch (e) {
       console.error('Erro ao processar mensagem:', e);
