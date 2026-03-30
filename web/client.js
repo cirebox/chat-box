@@ -35,6 +35,30 @@ const searchUser = document.getElementById('search-user');
 const searchResults = document.getElementById('search-results');
 const closeSearch = document.getElementById('close-search');
 
+function handleViewport() {
+  const viewport = document.querySelector('meta[name="viewport"]');
+  const chatScreen = document.getElementById('chat-screen');
+  if (!chatScreen || chatScreen.classList.contains('hidden')) return;
+  
+  const keyboardHeight = window.innerHeight - document.documentElement.clientHeight;
+  
+  if (keyboardHeight > 0) {
+    document.body.classList.add('keyboard-open');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, height=' + window.innerHeight + 'px');
+    }
+  } else {
+    document.body.classList.remove('keyboard-open');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    }
+  }
+}
+
+window.addEventListener('resize', handleViewport);
+window.addEventListener('focus', handleViewport);
+window.addEventListener('blur', handleViewport);
+
 const callAudioBtn = document.getElementById('call-audio-btn');
 const callVideoBtn = document.getElementById('call-video-btn');
 const incomingCallModal = document.getElementById('incoming-call-modal');

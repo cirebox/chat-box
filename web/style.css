@@ -16,16 +16,23 @@
   --wa-border: #e0e0e0;
 }
 
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: var(--wa-bg);
   color: var(--wa-text-primary);
-  height: 100vh;
+  height: 100%;
+  height: 100dvh;
   overflow: hidden;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .hidden { display: none !important; }
@@ -76,11 +83,18 @@ body.pwa-installed .pwa-banner {
 
 /* Login Screen */
 .screen {
-  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(180deg, #00a884 0%, #00897b 100%);
+  overflow: auto;
 }
 
 .login-container {
@@ -150,10 +164,27 @@ body.pwa-installed .pwa-banner {
 
 /* App Container */
 .app-container {
-  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--wa-bg);
+  overflow: hidden;
+}
+
+body.keyboard-open .app-container {
+  height: 100vh;
+  height: 100svh;
+}
+
+body.keyboard-open .messages-container {
+  flex: 1;
+  min-height: 0;
 }
 
 /* Header */
@@ -287,10 +318,14 @@ body.pwa-installed .pwa-banner {
 .messages-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   padding: 20px 5%;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 0;
 }
 
 .messages-container.hidden {
@@ -441,6 +476,8 @@ body.pwa-installed .pwa-banner {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-shrink: 0;
+  z-index: 100;
 }
 
 .chat-input-area.hidden {
@@ -510,6 +547,7 @@ body.pwa-installed .pwa-banner {
 .input-wrapper {
   flex: 1;
   display: flex;
+  min-width: 0;
 }
 
 .input-wrapper textarea {
@@ -517,7 +555,7 @@ body.pwa-installed .pwa-banner {
   padding: 10px 16px;
   border: none;
   border-radius: 20px;
-  font-size: 0.95rem;
+  font-size: 16px;
   background: white;
   outline: none;
   resize: none;
@@ -525,6 +563,8 @@ body.pwa-installed .pwa-banner {
   max-height: 120px;
   font-family: inherit;
   line-height: 1.4;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .input-wrapper textarea:focus {
