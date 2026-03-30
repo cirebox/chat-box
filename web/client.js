@@ -642,11 +642,21 @@ window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) =
 });
 
 const rtcConfig = {
-  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+  iceServers: [],
+  iceCandidatePoolSize: 10
 };
 
 async function startCall(callType) {
   if (isInCall) return;
+  
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
+  const isHTTPS = window.location.protocol === 'https:';
+  
+  if (!isLocalhost && !isHTTPS) {
+    alert('Chamadas requerem HTTPS. Acesse via https:// ou use localhost.');
+    return;
+  }
   
   try {
     const constraints = {
@@ -676,7 +686,10 @@ async function startCall(callType) {
       }
     };
     
-    const offer = await peerConnection.createOffer();
+    const offer = await peerConnection.createOffer({
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: callType === 'video'
+    });
     await peerConnection.setLocalDescription(offer);
     
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -691,7 +704,7 @@ async function startCall(callType) {
     
   } catch (err) {
     console.error('Erro ao iniciar chamada:', err);
-    alert('Não foi possível acessar a câmera/microfone');
+    alert('Não foi possível acessar a câmera/microfone. Verifique as permissões.');
   }
 }
 
@@ -767,6 +780,17 @@ callVideoBtn.addEventListener('click', () => startCall('video'));
 
 acceptCallBtn.addEventListener('click', async () => {
   if (!pendingCall) return;
+  
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
+  const isHTTPS = window.location.protocol === 'https:';
+  
+  if (!isLocalhost && !isHTTPS) {
+    alert('Chamadas requerem HTTPS. Acesse via https:// ou use localhost.');
+    incomingCallModal.classList.add('hidden');
+    pendingCall = null;
+    return;
+  }
   
   incomingCallModal.classList.add('hidden');
   
