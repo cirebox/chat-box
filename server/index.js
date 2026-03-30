@@ -184,6 +184,41 @@ wss.on('connection', (ws, req) => {
         case 'typing':
           broadcastToOthers(ws, clientId, { type: 'typing', name: clientName });
           break;
+
+        case 'call_request':
+          if (!clientName || !clientId) return;
+          broadcastToOthers(ws, clientId, {
+            type: 'call_request',
+            from: clientName,
+            from_id: clientId,
+            call_type: msg.call_type || 'video'
+          });
+          break;
+
+        case 'call_answer':
+          if (!clientName || !clientId) return;
+          broadcastToOthers(ws, clientId, {
+            type: 'call_answer',
+            from: clientName,
+            from_id: clientId,
+            accepted: msg.accepted
+          });
+          break;
+
+        case 'call_ice':
+          broadcastToOthers(ws, clientId, {
+            type: 'call_ice',
+            from_id: clientId,
+            candidate: msg.candidate
+          });
+          break;
+
+        case 'call_end':
+          broadcastToOthers(ws, clientId, {
+            type: 'call_end',
+            from_id: clientId
+          });
+          break;
       }
     } catch (e) {
       console.error('Erro ao processar mensagem:', e);

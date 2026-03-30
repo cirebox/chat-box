@@ -881,3 +881,169 @@ body.pwa-installed .pwa-banner {
     font-size: 1.2rem;
   }
 }
+
+/* Call Buttons */
+.call-btn {
+  margin-right: 8px;
+}
+
+.call-btn:last-of-type {
+  margin-right: 0;
+}
+
+/* Incoming Call Modal */
+.call-modal-content {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.call-avatar {
+  margin-bottom: 20px;
+}
+
+.call-avatar svg {
+  border-radius: 50%;
+  background: #e8f5f3;
+}
+
+#incoming-call-name {
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+}
+
+#incoming-call-status {
+  color: #667781;
+  margin-bottom: 30px;
+}
+
+.call-actions {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+}
+
+.call-btn-reject,
+.call-btn-accept {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.call-btn-reject {
+  background: #e53935;
+}
+
+.call-btn-accept {
+  background: #00a884;
+}
+
+.call-btn-reject:hover,
+.call-btn-accept:hover {
+  transform: scale(1.1);
+}
+
+/* Call Screen */
+.call-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #1f2c34;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+}
+
+.call-screen.hidden {
+  display: none;
+}
+
+.call-screen-header {
+  padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top, 0px));
+  text-align: center;
+  color: white;
+}
+
+#call-partner-name {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+#call-type-label {
+  font-size: 0.9rem;
+  color: #00a884;
+}
+
+.call-video-container {
+  flex: 1;
+  position: relative;
+  background: #0a141d;
+}
+
+#remote-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#local-video {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 120px;
+  height: 90px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid #00a884;
+}
+
+.call-screen-controls {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  background: #1f2c34;
+}
+
+.call-control-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #3e4a50;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.call-control-btn:hover {
+  background: #4e5a60;
+}
+
+.call-control-btn.active {
+  background: #3e4a50;
+}
+
+.call-control-btn:not(.active) {
+  background: #e53935;
+}
+
+.call-control-btn.end-call {
+  background: #e53935;
+}
+
+.call-control-btn.end-call:hover {
+  background: #c62828;
+}
