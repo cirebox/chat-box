@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const WebSocket = require('ws');
@@ -7,6 +8,10 @@ const db = require('./database');
 
 const WS_PORT = 8766;
 const HTTP_PORT = 8765;
+const HTTPS_PORT = 8764;
+
+const SSL_KEY = fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem'));
+const SSL_CERT = fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem'));
 
 const clients = new Map();
 
@@ -75,6 +80,15 @@ function getNameColor(name) {
   return NAME_COLORS[Math.abs(hash) % NAME_COLORS.length];
 }
 
+function parseTextFormatting(text) {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<b>$1</b>')
+    .replace(/_([^_]+)_/g, '<i>$1</i>')
+    .replace(/~([^~]+)~/g, '<del>$1</del>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
 const server = http.createServer((req, res) => {
   let filePath = req.url === '/' ? '/index.html' : req.url;
   filePath = path.join(__dirname, '..', 'web', filePath);
@@ -98,7 +112,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ server: httpsServer });
 
 wss.on('connection', (ws, req) => {
   const clientIP = req.socket.remoteAddress;
@@ -244,41 +258,9 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-function broadcast(data) {
-  const message = JSON.stringify(data);
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
-    }
-  });
-}
-
-function broadcastToOthers(sender, senderDeviceId, data) {
-  const messageData = { ...data, is_own: false };
-  const message = JSON.stringify(messageData);
-  wss.clients.forEach((client) => {
-    if (client !== sender && client.readyState === WebSocket.OPEN) {
-      client.send(message);
-    }
-  });
-}
-
-function broadcastUserList() {
-  const users = Array.from(clients.values()).map(c => ({ id: c.id, name: c.name, ip: c.ip }));
-  broadcast({ type: 'users', list: users });
-}
-
-function broadcastSystemMessage(text) {
-  broadcast({
-    type: 'system',
-    text: text,
-    time: new Date().toISOString()
-  });
-}
-
 db.initDatabase();
 
-server.listen(HTTP_PORT, '0.0.0.0', () => {
+httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
   const localIP = getLocalIP();
   console.log(`
 ╔═══════════════════════════════════════════╗
@@ -286,13 +268,19 @@ server.listen(HTTP_PORT, '0.0.0.0', () => {
 ╠═══════════════════════════════════════════╣
 ║  Acesse de outro dispositivo:            ║
 ║                                           ║
-║  ► http://localhost:${HTTP_PORT} (este dispositivo)  ║
-║  ► http://${localIP || '<IP>'}:${HTTP_PORT} (outros dispositivos) ║
+║  ► https://localhost:${HTTPS_PORT} (este dispositivo)  ║
+║  ► https://${localIP || '<IP>'}:${HTTPS_PORT} (outros dispositivos) ║
 ║                                           ║
-║  WebSocket: ws://localhost:${HTTP_PORT}             ║
+║  WebSocket: wss://localhost:${HTTPS_PORT}             ║
+║                                           ║
+║  HTTP (sem chamadas): http://localhost:${HTTP_PORT}     ║
 ╚═══════════════════════════════════════════╝
 `);
   
   startDiscoveryServer(WS_PORT);
   broadcastAnnounce(WS_PORT);
+});
+
+server.listen(HTTP_PORT, '0.0.0.0', () => {
+  console.log(`[HTTP] Servidor HTTP rodando na porta ${HTTP_PORT} (sem HTTPS - chamadas desativadas)`);
 });

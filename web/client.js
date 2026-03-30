@@ -1195,15 +1195,21 @@ function showChatScreen() {
 
 function connect(serverUrl = null) {
   let url = serverUrl;
+  const isHTTPS = window.location.protocol === 'https:';
+  const wsProtocol = isHTTPS ? 'wss://' : 'ws://';
+  const httpProtocol = isHTTPS ? 'https://' : 'http://';
+  const wsPort = isHTTPS ? '8764' : '8765';
+  const httpPort = isHTTPS ? '8764' : '8765';
+  
   if (!url) {
     const saved = getSavedServer();
     if (saved) {
-      const host = saved.includes(':') ? saved : `${saved}:${window.location.port || 8765}`;
-      url = `ws://${host}`;
+      const host = saved.includes(':') ? saved : `${saved}:${window.location.port || httpPort}`;
+      url = `${wsProtocol}${host}`;
     } else {
       const currentHost = window.location.hostname;
-      const currentPort = window.location.port || '8765';
-      url = `ws://${currentHost}:${currentPort}`;
+      const currentPort = window.location.port || httpPort;
+      url = `${wsProtocol}${currentHost}:${currentPort}`;
     }
   }
   
