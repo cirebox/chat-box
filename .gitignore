@@ -1,0 +1,5 @@
+node_modules/
+cirebox.db
+*.db
+.env
+.DS_Store

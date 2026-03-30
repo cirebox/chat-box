@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIREBOX - Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="login-screen" class="screen">
+    <div class="login-container">
+      <div class="login-brand">
+        <div class="brand-icon">💬</div>
+        <h1>CIREBOX</h1>
+        <p>Chat local sem internet</p>
+      </div>
+      <div class="login-box">
+        <form id="login-form">
+          <input type="text" id="username" placeholder="Digite seu nome" maxlength="25" required>
+          <button type="submit">Continuar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="chat-screen" class="app-container hidden">
+    <div class="app-header">
+      <div class="header-profile">
+        <div class="header-title">
+          <span class="app-name">CIREBOX CHAT</span>
+          <span id="device-name" class="device-name"></span>
+        </div>
+        <div id="connection-status" class="header-status">Conectando...</div>
+      </div>
+      <div class="header-actions">
+        <button id="search-btn" class="header-btn" title="Buscar mensagens">
+          <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        </button>
+        <button id="clear-btn" class="header-btn" title="Limpar chat">
+          <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="chat-main">
+      <div class="chat-placeholder" id="chat-placeholder">
+        <div class="placeholder-icon">
+          <svg viewBox="0 0 24 24" width="120" height="120"><path fill="#d1d7db" d="M20.2 2H4c-1.1 0-2 .9-2 2v18l4-4h14.2c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+        </div>
+        <h3>CIREBOX</h3>
+        <p>Envie e receba mensagens entre dispositivos na mesma rede!</p>
+        <div class="format-help">
+          <strong>Formatação:</strong><br>
+          <code>*negrito*</code> → <b>negrito</b><br>
+          <code>_itálico_</code> → <i>itálico</i><br>
+          <code>~tachado~</code> → <del>tachado</del><br>
+          <code>`código`</code> → <code>código</code>
+        </div>
+      </div>
+
+      <div id="messages" class="messages-container hidden"></div>
+
+      <div class="chat-input-area hidden" id="chat-input-area">
+        <label for="file-input" class="input-action-btn" title="Enviar imagem">
+          <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M1.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z"/></svg>
+        </label>
+        <input type="file" id="file-input" accept="image/*" hidden>
+        <div class="format-toolbar" id="format-toolbar">
+          <button type="button" class="format-btn" data-format="bold" title="Negrito">
+            <strong>B</strong>
+          </button>
+          <button type="button" class="format-btn" data-format="italic" title="Itálico">
+            <em>I</em>
+          </button>
+          <button type="button" class="format-btn" data-format="strike" title="Tachado">
+            <del>S</del>
+          </button>
+          <button type="button" class="format-btn" data-format="code" title="Código">
+            <code>&lt;/&gt;</code>
+          </button>
+        </div>
+        <form id="message-form" class="input-wrapper">
+          <textarea id="message-input" placeholder="Mensagem" disabled rows="1"></textarea>
+        </form>
+        <button type="button" id="send-btn" class="send-btn" disabled>
+          <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="discover-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Conectar ao Servidor</h3>
+      <div id="server-list" class="server-list"></div>
+      <div class="manual-connect">
+        <input type="text" id="manual-ip" placeholder="Endereço IP">
+        <button id="connect-manual">Conectar</button>
+      </div>
+      <button id="close-modal" class="close-btn">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-content confirm-modal-content">
+      <h3>Limpar Chat</h3>
+      <p>Tem certeza que deseja limpar todas as mensagens? Esta ação não pode ser desfeita.</p>
+      <div class="confirm-buttons">
+        <button id="confirm-cancel" class="btn-cancel">Cancelar</button>
+        <button id="confirm-ok" class="btn-confirm">Limpar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="search-modal" class="modal hidden">
+    <div class="modal-content search-modal-content">
+      <h3>Buscar Mensagens</h3>
+      <div class="search-inputs">
+        <input type="text" id="search-text" placeholder="Buscar por texto...">
+        <select id="search-user">
+          <option value="">Todos os usuários</option>
+        </select>
+      </div>
+      <div id="search-results" class="search-results"></div>
+      <button id="close-search" class="close-btn">Fechar</button>
+    </div>
+  </div>
+
+  <script src="client.js"></script>
+</body>
+</html>

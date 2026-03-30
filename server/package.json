@@ -1,0 +1,27 @@
+{
+  "name": "cirebox-chat",
+  "version": "1.0.0",
+  "description": "Chat local P2P para CIREBOX - rede local sem login",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop cirebox-chat",
+    "pm2:restart": "pm2 restart cirebox-chat",
+    "pm2:logs": "pm2 logs cirebox-chat",
+    "pm2:monit": "pm2 monit"
+  },
+  "keywords": [
+    "chat",
+    "local",
+    "p2p",
+    "websocket"
+  ],
+  "author": "CIREBOX",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "ws": "^8.16.0"
+  }
+}
