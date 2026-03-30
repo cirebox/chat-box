@@ -3,9 +3,9 @@ const os = require('os');
 
 const BROADCAST_PORT = 41234;
 const MESSAGE_TYPE = {
-  ANNOUNCE: 'CIREBOX_ANNOUNCE',
-  DISCOVER: 'CIREBOX_DISCOVER',
-  RESPONSE: 'CIREBOX_RESPONSE'
+  ANNOUNCE: 'CHATBOX_ANNOUNCE',
+  DISCOVER: 'CHATBOX_DISCOVER',
+  RESPONSE: 'CHATBOX_RESPONSE'
 };
 
 function getLocalIP() {
@@ -35,7 +35,7 @@ function startDiscoveryServer(port) {
           type: MESSAGE_TYPE.RESPONSE,
           ip: localIP,
           wsPort: port,
-          name: 'CIREBOX Chat'
+          name: 'CHATBOX Chat'
         });
         server.send(response, rinfo.port, rinfo.address);
       }
@@ -65,7 +65,7 @@ function broadcastAnnounce(port) {
     type: MESSAGE_TYPE.ANNOUNCE,
     ip: localIP,
     wsPort: port,
-    name: 'CIREBOX Chat'
+    name: 'CHATBOX Chat'
   });
 
   const broadcast = () => {

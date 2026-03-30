@@ -70,7 +70,7 @@ loginForm.addEventListener('submit', (e) => {
 function showChatScreen() {
   loginScreen.classList.add('hidden');
   chatScreen.classList.remove('hidden');
-  document.title = `CIREBOX - ${username}`;
+  document.title = `CHATBOX - ${username}`;
 }
 
 function connect(serverUrl = null) {

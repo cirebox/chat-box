@@ -238,7 +238,7 @@ server.listen(HTTP_PORT, '0.0.0.0', () => {
   const localIP = getLocalIP();
   console.log(`
 ╔═══════════════════════════════════════════╗
-║         CIREBOX CHAT - Servidor          ║
+║         CHATBOX - Servidor          ║
 ╠═══════════════════════════════════════════╣
 ║  Acesse de outro dispositivo:            ║
 ║                                           ║
