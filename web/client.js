@@ -629,16 +629,28 @@ const pwaCloseBtn = document.getElementById('pwa-close-btn');
 
 let deferredPrompt = null;
 
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+         window.matchMedia('(max-width: 768px)').matches;
+}
+
+function showPwaBanner() {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                        window.navigator.standalone === true;
   
-  if (!isStandalone && localStorage.getItem('pwa_dismissed') !== 'true') {
+  if (!isStandalone && localStorage.getItem('pwa_dismissed') !== 'true' && isMobileDevice()) {
     pwaBanner.classList.remove('hidden');
   }
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  showPwaBanner();
+});
+
+window.addEventListener('load', () => {
+  setTimeout(showPwaBanner, 2000);
 });
 
 pwaInstallBtn.addEventListener('click', async () => {
@@ -650,6 +662,19 @@ pwaInstallBtn.addEventListener('click', async () => {
     }
     deferredPrompt = null;
     pwaBanner.classList.add('hidden');
+  } else {
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    let message = 'Para instalar o CHATBOX como app:';
+    if (isAndroid) {
+      message += '\n\n1. Toque no menu (3 pontos)\n2. Selecione "Adicionar à tela inicial"';
+    } else if (isIOS) {
+      message += '\n\n1. Toque em Compartilhar\n2. Selecione "Adicionar à Tela de Início"';
+    } else {
+      message += '\n\nUse o menu do navegador para adicionar à tela inicial.';
+    }
+    alert(message);
   }
 });
 
