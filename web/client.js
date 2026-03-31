@@ -16,7 +16,16 @@ const usernameInput = document.getElementById('username');
 const messagesDiv = document.getElementById('messages');
 const messageInput = document.getElementById('message-input');
 const sendBtn = document.getElementById('send-btn');
+const audioBtn = document.getElementById('audio-btn');
+const stopAudioBtn = document.getElementById('stop-audio-btn');
+const audioRecording = document.getElementById('audio-recording');
+const recordingTime = document.getElementById('recording-time');
 const connectionStatus = document.getElementById('connection-status');
+
+let mediaRecorder = null;
+let audioChunks = [];
+let recordingStartTime = null;
+let recordingInterval = null;
 const deviceNameElement = document.getElementById('device-name');
 const searchBtn = document.getElementById('search-btn');
 const clearBtn = document.getElementById('clear-btn');
@@ -33,6 +42,7 @@ const searchModal = document.getElementById('search-modal');
 const searchText = document.getElementById('search-text');
 const searchUser = document.getElementById('search-user');
 const searchResults = document.getElementById('search-results');
+const searchFavorites = document.getElementById('search-favorites');
 const closeSearch = document.getElementById('close-search');
 
 function handleViewport() {
@@ -1198,8 +1208,8 @@ function connect(serverUrl = null) {
   const isHTTPS = window.location.protocol === 'https:';
   const wsProtocol = isHTTPS ? 'wss://' : 'ws://';
   const httpProtocol = isHTTPS ? 'https://' : 'http://';
-  const wsPort = isHTTPS ? '8764' : '8765';
-  const httpPort = isHTTPS ? '8764' : '8765';
+  const wsPort = isHTTPS ? '8443' : '8765';
+  const httpPort = isHTTPS ? '8443' : '8765';
   
   if (!url) {
     const saved = getSavedServer();
@@ -1264,8 +1274,9 @@ function handleMessage(msg) {
       if (deviceNameElement && msg.device_name) {
         deviceNameElement.textContent = msg.device_name;
       }
-      if (msg.messages && msg.messages.length > 0) {
+        if (msg.messages && msg.messages.length > 0) {
         msg.messages.forEach(addMessage);
+        renderPinnedSection();
       }
       break;
       
@@ -1275,6 +1286,10 @@ function handleMessage(msg) {
       
     case 'system':
       addSystemMessage(msg);
+      break;
+      
+    case 'typing':
+      handleTypingIndicator(msg);
       break;
       
     case 'chat_cleared':
@@ -1306,6 +1321,136 @@ function handleMessage(msg) {
         m.status = 'read';
       });
       break;
+
+    case 'message_updated':
+      handleMessageUpdated(msg);
+      break;
+  }
+}
+
+function handleMessageUpdated(data) {
+  let msg = allMessages.find(m => m.id === data.message_id);
+  
+  // If message not found locally, add it from the server data
+  if (!msg && data.message) {
+    msg = data.message;
+    allMessages.push(msg);
+  }
+  
+  if (msg) {
+    if (data.is_favorite !== undefined) {
+      msg.is_favorite = data.is_favorite;
+    }
+    if (data.is_pinned !== undefined) {
+      msg.is_pinned = data.is_pinned;
+    }
+    
+    // Update the message element classes
+    if (msg.element) {
+      if (msg.is_pinned === 1) {
+        msg.element.classList.add('pinned');
+      } else {
+        msg.element.classList.remove('pinned');
+      }
+      if (msg.is_favorite === 1) {
+        msg.element.classList.add('favorite');
+      } else {
+        msg.element.classList.remove('favorite');
+      }
+    }
+    
+    renderPinnedSection();
+  }
+}
+
+function renderPinnedSection() {
+  const pinnedSection = document.getElementById('pinned-section');
+  const pinnedMsgs = allMessages.filter(m => m.is_pinned === 1).slice(-5);
+  
+  if (pinnedMsgs.length === 0) {
+    pinnedSection.classList.add('hidden');
+    return;
+  }
+  
+  pinnedSection.classList.remove('hidden');
+  
+  let html = `
+    <div class="pinned-header">
+      <div class="pinned-header-icon">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/></svg>
+      </div>
+      <span class="pinned-header-text">Mensagens fixadas (${pinnedMsgs.length}/5)</span>
+    </div>
+    <div class="pinned-list">
+  `;
+  
+  pinnedMsgs.forEach(msg => {
+    html += `
+      <div class="pinned-card" onclick="scrollToMessage('${msg.id}')">
+        <button class="pinned-card-close" onclick="event.stopPropagation(); togglePinned('${msg.id}')">
+          <svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+        <div class="pinned-card-name">${escapeHtml(msg.device_name || msg.name || 'Unknown')}</div>
+        <div class="pinned-card-text">${escapeHtml(msg.content || msg.text || '')}</div>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  pinnedSection.innerHTML = html;
+}
+
+function getFileIcon(fileType) {
+  const icons = {
+    pdf: '📄',
+    apk: '📱',
+    audio: '🎵',
+    video: '🎬',
+    archive: '📦',
+    doc: '📝',
+    default: '📎'
+  };
+  return icons[fileType] || icons.default;
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function downloadFile(fileData, fileName) {
+  const link = document.createElement('a');
+  link.href = fileData;
+  link.download = fileName;
+  link.click();
+}
+
+function scrollToMessage(messageId) {
+  const msg = allMessages.find(m => m.id === messageId);
+  if (msg && msg.element) {
+    msg.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    msg.element.classList.add('highlight');
+    setTimeout(() => msg.element.classList.remove('highlight'), 2000);
+  }
+}
+
+function toggleFavorite(messageId) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'toggle_favorite',
+      message_id: messageId
+    }));
+  }
+}
+
+function togglePinned(messageId) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'toggle_pinned',
+      message_id: messageId
+    }));
   }
 }
 
@@ -1337,6 +1482,9 @@ function addMessage(msg) {
   }
   div.className = `message ${isOwn ? 'own' : 'other'} ${statusClass}`;
   
+  if (msg.is_pinned === 1) div.classList.add('pinned');
+  if (msg.is_favorite === 1) div.classList.add('favorite');
+  
   const time = msgDate.toLocaleTimeString('pt-BR', { 
     hour: '2-digit', 
     minute: '2-digit' 
@@ -1355,15 +1503,55 @@ function addMessage(msg) {
     const nameColor = msg.name_color || '#128c7e';
     content += `<div class="message-name" style="color: ${nameColor}">${escapeHtml(msg.device_name || msg.name)}</div>`;
   }
-  content += `<div class="message-text">${msg.content || msg.text}</div>`;
+  
+  if (msg.content || msg.text) {
+    const hasFile = msg.file && !msg.image && !msg.audio;
+    if (!hasFile) {
+      content += `<div class="message-text">${msg.content || msg.text}</div>`;
+    }
+  }
   
   if (msg.image) {
     content += `<img src="${msg.image}" class="message-image" alt="imagem">`;
   }
   
+  if (msg.audio) {
+    content += `
+      <div class="message-audio">
+        <audio controls src="${msg.audio}"></audio>
+      </div>
+    `;
+  }
+  
+  if (msg.file && !msg.image && !msg.audio) {
+    const fileIcon = getFileIcon(msg.file_type);
+    const fileSize = formatFileSize(msg.file_size);
+    const fileName = msg.file_name || 'Arquivo';
+    content += `
+      <div class="message-file" ondblclick="downloadFile('${msg.file}', '${fileName}')">
+        <div class="file-icon-left">${fileIcon}</div>
+        <div class="file-details">
+          <div class="file-name-row">
+            <div class="file-name">${escapeHtml(fileName)}</div>
+            <div class="file-size">${fileSize}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
   content += `<div class="message-time">${time}</div>`;
+  content += `
+    <div class="favorite-star">
+      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+    </div>
+    <div class="message-actions-btn" onclick="event.stopPropagation(); toggleMessageMenu('${msg.id}', event)">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+    </div>
+  `;
 
   div.innerHTML = content;
+  div.dataset.messageId = msg.id;
   messagesDiv.appendChild(div);
   
   const codeEls = div.querySelectorAll('code');
@@ -1403,6 +1591,55 @@ function markMessagesAsRead() {
   }
 }
 
+let currentMessageMenu = null;
+
+function toggleMessageMenu(messageId, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const msg = allMessages.find(m => m.id === messageId);
+  if (!msg) return;
+  
+  const existingMenu = document.querySelector('.message-menu');
+  if (existingMenu) {
+    existingMenu.remove();
+  }
+  
+  const msgElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
+  if (!msgElement) return;
+  
+  const menu = document.createElement('div');
+  menu.className = 'message-menu show';
+  menu.innerHTML = `
+    <div class="message-menu-item favorite ${msg.is_favorite ? 'active' : ''}" onclick="toggleFavorite('${messageId}'); this.closest('.message-menu').remove();">
+      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      <span>${msg.is_favorite ? 'Remover favorito' : 'Favoritar'}</span>
+    </div>
+    <div class="message-menu-item pinned ${msg.is_pinned ? 'active' : ''}" onclick="togglePinned('${messageId}'); this.closest('.message-menu').remove();">
+      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/></svg>
+      <span>${msg.is_pinned ? 'Desafixar' : 'Fixar mensagem'}</span>
+    </div>
+  `;
+  
+  msgElement.appendChild(menu);
+  currentMessageMenu = menu;
+  
+  setTimeout(() => {
+    document.addEventListener('click', closeMessageMenu);
+  }, 100);
+}
+
+function closeMessageMenu(e) {
+  if (!e.target.closest('.message-menu')) {
+    const menu = document.querySelector('.message-menu');
+    if (menu) {
+      menu.remove();
+    }
+    document.removeEventListener('click', closeMessageMenu);
+  }
+}
+
 function formatDateDivider(date) {
   const today = new Date();
   const yesterday = new Date(today);
@@ -1431,6 +1668,49 @@ function addSystemMessage(msg) {
   div.textContent = msg.text;
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+let typingTimeout = null;
+let typingIndicatorTimeout = null;
+
+function handleTypingIndicator(msg) {
+  showTypingIndicator(msg.name);
+}
+
+function showTypingIndicator(name) {
+  let typingEl = document.getElementById('typing-indicator');
+  
+  if (!typingEl) {
+    typingEl = document.createElement('div');
+    typingEl.id = 'typing-indicator';
+    typingEl.className = 'typing-indicator';
+    typingEl.innerHTML = `
+      <span class="typing-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+      <span class="typing-text"></span>
+    `;
+    messagesDiv.appendChild(typingEl);
+  }
+  
+  typingEl.querySelector('.typing-text').textContent = `${name} está digitando...`;
+  typingEl.classList.remove('hidden');
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  
+  clearTimeout(typingIndicatorTimeout);
+  typingIndicatorTimeout = setTimeout(() => {
+    typingEl.classList.add('hidden');
+  }, 3000);
+}
+
+function sendTyping() {
+  clearTimeout(typingTimeout);
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'typing' }));
+  }
+  typingTimeout = setTimeout(() => {}, 0);
 }
 
 function updateConnectionStatus(status) {
@@ -1555,9 +1835,7 @@ messageInput.addEventListener('focus', () => {
 });
 
 messageInput.addEventListener('input', () => {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'typing' }));
-  }
+  sendTyping();
   messageInput.style.height = 'auto';
   messageInput.style.height = messageInput.scrollHeight + 'px';
 });
@@ -1598,20 +1876,118 @@ if (formatToolbar) {
 
 fileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
-  if (file && file.type.startsWith('image/')) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ 
-          type: 'message', 
-          text: `[Imagem: ${file.name}]`,
-          image: reader.result 
-        }));
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      let fileType = 'file';
+      let fileIcon = '📎';
+      let displayText = file.name;
+      
+      if (file.type.startsWith('image/')) {
+        fileType = 'image';
+        fileIcon = '🖼️';
+      } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        fileType = 'pdf';
+        fileIcon = '📄';
+        displayText = file.name;
+      } else if (file.type === 'application/vnd.android.package-archive' || file.name.endsWith('.apk')) {
+        fileType = 'apk';
+        fileIcon = '📱';
+        displayText = file.name;
+      } else if (file.type.startsWith('audio/') || file.name.endsWith('.mp3') || file.name.endsWith('.m4a')) {
+        fileType = 'audio';
+        fileIcon = '🎵';
+        displayText = file.name;
+      } else if (file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.mov')) {
+        fileType = 'video';
+        fileIcon = '🎬';
+        displayText = file.name;
+      } else if (file.name.endsWith('.zip') || file.name.endsWith('.rar')) {
+        fileType = 'archive';
+        fileIcon = '📦';
+        displayText = file.name;
+      }
+      
+      const messageData = {
+        type: 'message',
+        text: displayText,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: fileType
+      };
+      
+      if (fileType === 'image') {
+        messageData.image = reader.result;
+      } else {
+        messageData.file = reader.result;
+      }
+      
+      ws.send(JSON.stringify(messageData));
+    }
+  };
+  
+  reader.readAsDataURL(file);
+  fileInput.value = '';
+});
+
+audioBtn.addEventListener('click', async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        audioChunks.push(e.data);
       }
     };
-    reader.readAsDataURL(file);
+    
+    mediaRecorder.onstop = () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ 
+            type: 'message', 
+            text: '[Áudio]',
+            audio: reader.result 
+          }));
+        }
+      };
+      reader.readAsDataURL(audioBlob);
+      stream.getTracks().forEach(track => track.stop());
+    };
+    
+    mediaRecorder.start();
+    recordingStartTime = Date.now();
+    audioBtn.classList.add('hidden');
+    stopAudioBtn.classList.remove('hidden');
+    audioRecording.classList.remove('hidden');
+    
+    recordingInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      recordingTime.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }, 1000);
+    
+  } catch (err) {
+    console.error('Erro ao gravar áudio:', err);
+    alert('Não foi possível acessar o microfone. Verifique as permissões.');
   }
-  fileInput.value = '';
+});
+
+stopAudioBtn.addEventListener('click', () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    clearInterval(recordingInterval);
+    audioBtn.classList.remove('hidden');
+    stopAudioBtn.classList.add('hidden');
+    audioRecording.classList.add('hidden');
+    recordingTime.textContent = '0:00';
+  }
 });
 
 searchBtn.addEventListener('click', () => {
@@ -1631,6 +2007,8 @@ searchBtn.addEventListener('click', () => {
 
 searchText.addEventListener('input', performSearch);
 searchUser.addEventListener('change', performSearch);
+searchFavorites.addEventListener('change', performSearch);
+searchUser.addEventListener('change', performSearch);
 
 closeSearch.addEventListener('click', () => {
   searchModal.classList.add('hidden');
@@ -1639,11 +2017,13 @@ closeSearch.addEventListener('click', () => {
 function performSearch() {
   const text = searchText.value.toLowerCase();
   const user = searchUser.value;
+  const onlyFavorites = searchFavorites.checked;
   
   let results = allMessages.filter(m => {
     const matchText = !text || (m.content || m.text || '').toLowerCase().includes(text);
     const matchUser = !user || m.device_name === user;
-    return matchText && matchUser;
+    const matchFavorite = !onlyFavorites || m.is_favorite;
+    return matchText && matchUser && matchFavorite;
   });
   
   if (results.length === 0) {
@@ -1657,6 +2037,7 @@ function performSearch() {
     item.className = 'search-result-item';
     const time = new Date(msg.timestamp || msg.time);
     item.innerHTML = `
+      ${msg.is_favorite ? '<span style="color: #FFD700">⭐</span>' : ''}
       <div class="search-result-name" style="color: ${msg.name_color || '#128c7e'}">${escapeHtml(msg.device_name || msg.name)}</div>
       <div class="search-result-text">${msg.content || msg.text}</div>
       <div class="search-result-time">${time.toLocaleString('pt-BR')}</div>
