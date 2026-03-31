@@ -1640,7 +1640,17 @@ function toggleMessageMenu(messageId, event) {
     event.preventDefault();
   }
   const msg = allMessages.find(m => m.id === messageId);
-  if (!msg) return;
+  if (!msg) {
+    console.log('toggleMessageMenu: mensagem não encontrada');
+    return;
+  }
+  
+  console.log('toggleMessageMenu - inicio:', {
+    messageId: messageId,
+    msgDeviceId: msg.device_id,
+    storedDeviceId: localStorage.getItem(DEVICE_ID_KEY),
+    deviceId: deviceId
+  });
   
   const existingMenu = document.querySelector('.message-menu');
   if (existingMenu) {
@@ -1655,6 +1665,7 @@ function toggleMessageMenu(messageId, event) {
   
   const currentDeviceId = localStorage.getItem(DEVICE_ID_KEY);
   const isOwnMsg = msg.device_id === currentDeviceId;
+  console.log('isOwnMsg calculado:', isOwnMsg);
   
   const favItem = document.createElement('div');
   favItem.className = 'message-menu-item favorite' + (msg.is_favorite ? ' active' : '');
@@ -1675,17 +1686,19 @@ function toggleMessageMenu(messageId, event) {
   menu.appendChild(favItem);
   menu.appendChild(pinItem);
   
-  if (isOwnMsg) {
-    const deleteItem = document.createElement('div');
-    deleteItem.className = 'message-menu-item delete';
-    deleteItem.innerHTML = `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg><span>Excluir</span>`;
-    deleteItem.addEventListener('click', () => {
-      console.log('Delete clicked for message:', messageId);
+  const deleteItem = document.createElement('div');
+  deleteItem.className = 'message-menu-item delete';
+  deleteItem.innerHTML = `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg><span>Excluir ${isOwnMsg ? '(sua)' : '(outro)'}</span>`;
+  deleteItem.addEventListener('click', () => {
+    console.log('Delete clicked - messageId:', messageId, 'isOwnMsg:', isOwnMsg, 'deviceId:', deviceId);
+    if (isOwnMsg) {
       deleteMessage(messageId);
-      menu.remove();
-    });
-    menu.appendChild(deleteItem);
-  }
+    } else {
+      alert('Você só pode excluir suas próprias mensagens!');
+    }
+    menu.remove();
+  });
+  menu.appendChild(deleteItem);
   
   msgElement.appendChild(menu);
   currentMessageMenu = menu;
