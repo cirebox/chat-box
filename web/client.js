@@ -1240,7 +1240,6 @@ function connect(serverUrl = null) {
     }));
     
     enableChat();
-    chatPlaceholder.classList.add('hidden');
     messagesDiv.classList.remove('hidden');
     chatInputArea.classList.remove('hidden');
   };
@@ -1294,6 +1293,8 @@ function handleMessage(msg) {
       
     case 'chat_cleared':
       messagesDiv.innerHTML = '';
+      allMessages = [];
+      chatPlaceholder.classList.remove('hidden');
       break;
       
     case 'call_request':
@@ -1324,6 +1325,10 @@ function handleMessage(msg) {
 
     case 'message_updated':
       handleMessageUpdated(msg);
+      break;
+
+    case 'message_deleted':
+      handleMessageDeleted(msg.message_id);
       break;
   }
 }
@@ -1360,6 +1365,22 @@ function handleMessageUpdated(data) {
     }
     
     renderPinnedSection();
+  }
+}
+
+function handleMessageDeleted(messageId) {
+  const msgIndex = allMessages.findIndex(m => m.id === messageId);
+  if (msgIndex !== -1) {
+    const msg = allMessages[msgIndex];
+    if (msg.element) {
+      msg.element.remove();
+    }
+    allMessages.splice(msgIndex, 1);
+    renderPinnedSection();
+    
+    if (allMessages.length === 0) {
+      chatPlaceholder.classList.remove('hidden');
+    }
   }
 }
 
@@ -1454,6 +1475,15 @@ function togglePinned(messageId) {
   }
 }
 
+function deleteMessage(messageId) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'delete_message',
+      message_id: messageId
+    }));
+  }
+}
+
 let lastMessageDate = null;
 
 function addMessage(msg) {
@@ -1475,7 +1505,7 @@ function addMessage(msg) {
   }
   
   const div = document.createElement('div');
-  const isOwn = msg.is_own || msg.device_id === deviceId;
+  const isOwn = msg.device_id === deviceId;
   let statusClass = '';
   if (isOwn) {
     statusClass = msg.status === 'read' ? 'own read' : 'own sent';
@@ -1611,6 +1641,7 @@ function toggleMessageMenu(messageId, event) {
   
   const menu = document.createElement('div');
   menu.className = 'message-menu show';
+  const isOwnMsg = msg.device_id === deviceId;
   menu.innerHTML = `
     <div class="message-menu-item favorite ${msg.is_favorite ? 'active' : ''}" onclick="toggleFavorite('${messageId}'); this.closest('.message-menu').remove();">
       <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
@@ -1620,6 +1651,12 @@ function toggleMessageMenu(messageId, event) {
       <svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/></svg>
       <span>${msg.is_pinned ? 'Desafixar' : 'Fixar mensagem'}</span>
     </div>
+    ${isOwnMsg ? `
+    <div class="message-menu-item delete" onclick="deleteMessage('${messageId}'); this.closest('.message-menu').remove();">
+      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      <span>Excluir</span>
+    </div>
+    ` : ''}
   `;
   
   msgElement.appendChild(menu);
@@ -1659,7 +1696,6 @@ function formatDateDivider(date) {
 }
 
 function addSystemMessage(msg) {
-  chatPlaceholder.classList.add('hidden');
   messagesDiv.classList.remove('hidden');
   chatInputArea.classList.remove('hidden');
   

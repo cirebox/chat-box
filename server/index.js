@@ -72,12 +72,15 @@ function getNameColor(name) {
 }
 
 function parseTextFormatting(text) {
+  const urlRegex = /(https?:\/\/[^\s<]+)/g;
+  
   return text
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<b>$1</b>')
     .replace(/_([^_]+)_/g, '<i>$1</i>')
     .replace(/~([^~]+)~/g, '<del>$1</del>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>');
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
 }
 
 const server = http.createServer((req, res) => {
@@ -251,6 +254,14 @@ wss.on('connection', (ws, req) => {
           const pinnedNew = db.togglePinned(msg.message_id, clientId);
           const pinnedMsg = db.getMessages(msg.message_id);
           broadcast({ type: 'message_updated', message_id: msg.message_id, is_pinned: pinnedNew, message: pinnedMsg });
+          break;
+
+        case 'delete_message':
+          if (!clientId) return;
+          const deleted = db.deleteMessage(msg.message_id, clientId);
+          if (deleted) {
+            broadcast({ type: 'message_deleted', message_id: msg.message_id });
+          }
           break;
       }
     } catch (e) {

@@ -163,6 +163,15 @@ function getFavoriteMessages(deviceId) {
   return db.prepare('SELECT * FROM messages WHERE is_favorite = 1 ORDER BY timestamp DESC').all();
 }
 
+function deleteMessage(messageId, deviceId) {
+  const msg = db.prepare('SELECT * FROM messages WHERE id = ?').get(messageId);
+  if (msg && msg.device_id === deviceId) {
+    db.prepare('DELETE FROM messages WHERE id = ?').run(messageId);
+    return true;
+  }
+  return false;
+}
+
 function getAllDevices() {
   return db.prepare('SELECT * FROM devices ORDER BY last_seen DESC').all();
 }
@@ -192,5 +201,6 @@ module.exports = {
   togglePinned,
   getPinnedMessages,
   getFavoriteMessages,
+  deleteMessage,
   db
 };

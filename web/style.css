@@ -265,6 +265,7 @@ body.keyboard-open .messages-container {
 
 /* Chat Main */
 .chat-main {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -274,13 +275,19 @@ body.keyboard-open .messages-container {
 
 /* Placeholder */
 .chat-placeholder {
-  flex: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: 2rem;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .chat-placeholder.hidden {
@@ -325,11 +332,14 @@ body.keyboard-open .messages-container {
 
 /* Messages */
 .messages-container {
+  position: relative;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   padding: 20px 5%;
+  background: transparent;
+  z-index: 1;
   padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
@@ -563,6 +573,14 @@ body.keyboard-open .messages-container {
   color: #4caf50;
 }
 
+.message-menu-item.delete {
+  color: #f44336;
+}
+
+.message-menu-item.delete:hover {
+  background: #ffebee;
+}
+
 .message {
   max-width: 65%;
   padding: 8px 12px;
@@ -706,6 +724,21 @@ body.keyboard-open .messages-container {
   border-radius: 4px;
   padding: 2px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.message .message-text a {
+  color: #007bff;
+  text-decoration: underline;
+  word-break: break-all;
+  cursor: pointer;
+}
+
+.message .message-text a:hover {
+  color: #0056b3;
+}
+
+.message .message-text a:active {
+  color: #004085;
 }
 
 .message.highlight {
