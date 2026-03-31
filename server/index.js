@@ -256,11 +256,14 @@ wss.on('connection', (ws, req) => {
           broadcast({ type: 'message_updated', message_id: msg.message_id, is_pinned: pinnedNew, message: pinnedMsg });
           break;
 
-        case 'delete_message':
+        case 'delete':
+          console.log('[DELETE] Received delete request:', msg);
+          console.log('[DELETE] clientId:', clientId);
           if (!clientId) return;
-          const deleted = db.deleteMessage(msg.message_id, clientId);
+          const deleted = db.deleteMessage(msg.id, clientId);
+          console.log('[DELETE] Result:', deleted);
           if (deleted) {
-            broadcast({ type: 'message_deleted', message_id: msg.message_id });
+            broadcast({ type: 'message_deleted', id: msg.id });
           }
           break;
       }

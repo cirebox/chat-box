@@ -1328,7 +1328,7 @@ function handleMessage(msg) {
       break;
 
     case 'message_deleted':
-      handleMessageDeleted(msg.message_id);
+      handleMessageDeleted(msg.id);
       break;
   }
 }
@@ -1369,11 +1369,16 @@ function handleMessageUpdated(data) {
 }
 
 function handleMessageDeleted(messageId) {
+  console.log('handleMessageDeleted called:', messageId);
+  console.log('allMessages count:', allMessages.length);
   const msgIndex = allMessages.findIndex(m => m.id === messageId);
+  console.log('msgIndex found:', msgIndex);
   if (msgIndex !== -1) {
     const msg = allMessages[msgIndex];
+    console.log('Removing message:', msg.id);
     if (msg.element) {
       msg.element.remove();
+      console.log('Element removed from DOM');
     }
     allMessages.splice(msgIndex, 1);
     renderPinnedSection();
@@ -1381,6 +1386,8 @@ function handleMessageDeleted(messageId) {
     if (allMessages.length === 0) {
       chatPlaceholder.classList.remove('hidden');
     }
+  } else {
+    console.log('Message not found in allMessages array');
   }
 }
 
@@ -1476,10 +1483,11 @@ function togglePinned(messageId) {
 }
 
 function deleteMessage(messageId) {
+  console.log('deleteMessage called:', messageId);
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({
-      type: 'delete_message',
-      message_id: messageId
+      type: 'delete',
+      id: messageId
     }));
   }
 }
@@ -1686,19 +1694,16 @@ function toggleMessageMenu(messageId, event) {
   menu.appendChild(favItem);
   menu.appendChild(pinItem);
   
-  const deleteItem = document.createElement('div');
-  deleteItem.className = 'message-menu-item delete';
-  deleteItem.innerHTML = `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg><span>Excluir ${isOwnMsg ? '(sua)' : '(outro)'}</span>`;
-  deleteItem.addEventListener('click', () => {
-    console.log('Delete clicked - messageId:', messageId, 'isOwnMsg:', isOwnMsg, 'deviceId:', deviceId);
-    if (isOwnMsg) {
+  if (isOwnMsg) {
+    const deleteItem = document.createElement('div');
+    deleteItem.className = 'message-menu-item delete';
+    deleteItem.innerHTML = `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg><span>Excluir</span>`;
+    deleteItem.addEventListener('click', () => {
       deleteMessage(messageId);
-    } else {
-      alert('Você só pode excluir suas próprias mensagens!');
-    }
-    menu.remove();
-  });
-  menu.appendChild(deleteItem);
+      menu.remove();
+    });
+    menu.appendChild(deleteItem);
+  }
   
   msgElement.appendChild(menu);
   currentMessageMenu = menu;
