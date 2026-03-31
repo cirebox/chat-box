@@ -19,7 +19,14 @@ function initDatabase() {
       device_name TEXT,
       content TEXT,
       image TEXT,
+      audio TEXT,
+      file TEXT,
+      file_name TEXT,
+      file_type TEXT,
+      file_size INTEGER,
       is_own INTEGER DEFAULT 0,
+      is_favorite INTEGER DEFAULT 0,
+      is_pinned INTEGER DEFAULT 0,
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (device_id) REFERENCES devices(id)
     );
@@ -27,6 +34,28 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_messages_device ON messages(device_id);
     CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
   `);
+  
+  try {
+    db.exec('ALTER TABLE messages ADD COLUMN is_favorite INTEGER DEFAULT 0');
+  } catch (e) {}
+  try {
+    db.exec('ALTER TABLE messages ADD COLUMN is_pinned INTEGER DEFAULT 0');
+  } catch (e) {}
+  try {
+    db.exec('ALTER TABLE messages ADD COLUMN audio TEXT');
+  } catch (e) {}
+  try {
+    db.exec('ALTER TABLE messages ADD COLUMN file TEXT');
+  } catch (e) {}
+  try {
+    db.exec('ALTER TABLE messages ADD COLUMN file_name TEXT');
+  } catch (e) {}
+  try {
+    db.exec('ALTER TABLE messages ADD COLUMN file_type TEXT');
+  } catch (e) {}
+  try {
+    db.exec('ALTER TABLE messages ADD COLUMN file_size INTEGER');
+  } catch (e) {}
   
   console.log('[DB] Banco de dados inicializado');
 }
@@ -49,8 +78,8 @@ function setDeviceOffline(id) {
 
 function saveMessage(message) {
   const stmt = db.prepare(`
-    INSERT INTO messages (id, device_id, device_name, content, image, is_own, timestamp)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO messages (id, device_id, device_name, content, image, audio, file, file_name, file_type, file_size, is_own, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
   stmt.run(
@@ -59,6 +88,11 @@ function saveMessage(message) {
     message.device_name,
     message.content,
     message.image || null,
+    message.audio || null,
+    message.file || null,
+    message.file_name || null,
+    message.file_type || null,
+    message.file_size || null,
     message.is_own ? 1 : 0,
     message.timestamp
   );
@@ -101,6 +135,34 @@ function clearAllMessages() {
   db.prepare('DELETE FROM messages').run();
 }
 
+function toggleFavorite(messageId, deviceId) {
+  const msg = db.prepare('SELECT is_favorite FROM messages WHERE id = ?').get(messageId);
+  if (msg) {
+    const newValue = msg.is_favorite ? 0 : 1;
+    db.prepare('UPDATE messages SET is_favorite = ? WHERE id = ?').run(newValue, messageId);
+    return newValue;
+  }
+  return 0;
+}
+
+function togglePinned(messageId, deviceId) {
+  const msg = db.prepare('SELECT is_pinned FROM messages WHERE id = ?').get(messageId);
+  if (msg) {
+    const newValue = msg.is_pinned ? 0 : 1;
+    db.prepare('UPDATE messages SET is_pinned = ? WHERE id = ?').run(newValue, messageId);
+    return newValue;
+  }
+  return 0;
+}
+
+function getPinnedMessages() {
+  return db.prepare('SELECT * FROM messages WHERE is_pinned = 1 ORDER BY timestamp DESC').all();
+}
+
+function getFavoriteMessages(deviceId) {
+  return db.prepare('SELECT * FROM messages WHERE is_favorite = 1 ORDER BY timestamp DESC').all();
+}
+
 function getAllDevices() {
   return db.prepare('SELECT * FROM devices ORDER BY last_seen DESC').all();
 }
@@ -126,5 +188,9 @@ module.exports = {
   getAllDevices,
   getOnlineDevices,
   updateDeviceName,
+  toggleFavorite,
+  togglePinned,
+  getPinnedMessages,
+  getFavoriteMessages,
   db
 };

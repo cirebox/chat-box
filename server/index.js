@@ -8,7 +8,7 @@ const db = require('./database');
 
 const WS_PORT = 8766;
 const HTTP_PORT = 8765;
-const HTTPS_PORT = 8764;
+const HTTPS_PORT = 8443;
 
 const SSL_KEY = fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem'));
 const SSL_CERT = fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem'));
@@ -57,15 +57,6 @@ function getLocalIP() {
   return null;
 }
 
-function parseTextFormatting(text) {
-  return text
-    .replace(/\n/g, '<br>')
-    .replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
-    .replace(/_([^_]+)_/g, '<em>$1</em>')
-    .replace(/~([^~]+)~/g, '<del>$1</del>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>');
-}
-
 const NAME_COLORS = [
   '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', 
   '#2196f3', '#03a9f4', '#00bcd4', '#009688',
@@ -112,7 +103,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-const wss = new WebSocket.Server({ server: httpsServer });
+const wss = new WebSocket.Server({ server: server });
 
 wss.on('connection', (ws, req) => {
   const clientIP = req.socket.remoteAddress;
@@ -169,6 +160,11 @@ wss.on('connection', (ws, req) => {
             content: formattedText,
             original_content: msg.text,
             image: msg.image || null,
+            audio: msg.audio || null,
+            file: msg.file || null,
+            file_name: msg.file_name || null,
+            file_type: msg.file_type || null,
+            file_size: msg.file_size || null,
             is_own: true,
             timestamp: new Date().toISOString()
           };
@@ -180,13 +176,14 @@ wss.on('connection', (ws, req) => {
           
           broadcastToOthers(ws, clientId, {
             type: 'message',
-            ...message
+            ...message,
+            is_own: 0
           });
           
           ws.send(JSON.stringify({
             type: 'message',
             ...message,
-            is_own: true
+            is_own: 1
           }));
           break;
 
@@ -241,6 +238,20 @@ wss.on('connection', (ws, req) => {
             reader_id: clientId
           });
           break;
+
+        case 'toggle_favorite':
+          if (!clientId) return;
+          const favNew = db.toggleFavorite(msg.message_id, clientId);
+          const favMsg = db.getMessages(msg.message_id);
+          broadcast({ type: 'message_updated', message_id: msg.message_id, is_favorite: favNew, message: favMsg });
+          break;
+
+        case 'toggle_pinned':
+          if (!clientId) return;
+          const pinnedNew = db.togglePinned(msg.message_id, clientId);
+          const pinnedMsg = db.getMessages(msg.message_id);
+          broadcast({ type: 'message_updated', message_id: msg.message_id, is_pinned: pinnedNew, message: pinnedMsg });
+          break;
       }
     } catch (e) {
       console.error('Erro ao processar mensagem:', e);
@@ -258,28 +269,65 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-db.initDatabase();
+function broadcastToAll(message) {
+  const data = JSON.stringify(message);
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(data);
+    }
+  });
+}
 
-httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
-  const localIP = getLocalIP();
-  console.log(`
+function broadcastToOthers(sender, senderId, message) {
+  const data = JSON.stringify(message);
+  wss.clients.forEach(client => {
+    if (client !== sender && client.readyState === WebSocket.OPEN) {
+      client.send(data);
+    }
+  });
+}
+
+function broadcastUserList() {
+  const users = [];
+  wss.clients.forEach(client => {
+    const c = clients.get(client);
+    if (c) users.push({ id: c.id, name: c.name });
+  });
+  broadcastToAll({ type: 'user_list', users });
+}
+
+function broadcastSystemMessage(text) {
+  broadcastToAll({
+    type: 'system',
+    text: text,
+    timestamp: new Date().toISOString()
+  });
+}
+
+function broadcast(msg) {
+  broadcastToAll(msg);
+}
+
+// HTTPS handled by nginx on port 8443
+
+const localIP = getLocalIP();
+console.log(`
 ╔═══════════════════════════════════════════╗
 ║         CHATBOX - Servidor          ║
 ╠═══════════════════════════════════════════╣
 ║  Acesse de outro dispositivo:            ║
 ║                                           ║
-║  ► https://localhost:${HTTPS_PORT} (este dispositivo)  ║
-║  ► https://${localIP || '<IP>'}:${HTTPS_PORT} (outros dispositivos) ║
+║  ► https://localhost:8443 (este dispositivo)  ║
+║  ► https://${localIP || '<IP>'}:8443 (outros dispositivos) ║
 ║                                           ║
-║  WebSocket: wss://localhost:${HTTPS_PORT}             ║
+║  WebSocket: wss://localhost:8443             ║
 ║                                           ║
 ║  HTTP (sem chamadas): http://localhost:${HTTP_PORT}     ║
 ╚═══════════════════════════════════════════╝
 `);
-  
-  startDiscoveryServer(WS_PORT);
-  broadcastAnnounce(WS_PORT);
-});
+
+startDiscoveryServer(WS_PORT);
+broadcastAnnounce(WS_PORT);
 
 server.listen(HTTP_PORT, '0.0.0.0', () => {
   console.log(`[HTTP] Servidor HTTP rodando na porta ${HTTP_PORT} (sem HTTPS - chamadas desativadas)`);
