@@ -4,3 +4,4 @@ cirebox.db
 .env
 .DS_Store
 server/ssl/
+server.log
