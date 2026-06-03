@@ -847,6 +847,7 @@ body.keyboard-open .messages-container {
   display: flex;
   align-items: flex-end;
   gap: 8px;
+  position: relative;
 }
 
 .input-action-btn {
@@ -1739,6 +1740,57 @@ body.keyboard-open .messages-container {
 
 .emoji-picker.hidden {
   display: none;
+}
+
+/* Mention */
+.message-text .mention {
+  display: inline-block;
+  background: #dcf8c6;
+  color: #128c7e;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.mention-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 48px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  min-width: 160px;
+  animation: fadeIn 0.1s ease-out;
+}
+
+.mention-dropdown.hidden {
+  display: none;
+}
+
+.mention-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  color: #111b21;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+
+.mention-item:hover,
+.mention-item.selected {
+  background: #f0f2f5;
+  color: #00a884;
+  font-weight: 600;
+}
+
+.mention-item:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.mention-item:last-child {
+  border-radius: 0 0 8px 8px;
 }
 
 .emoji-tabs {

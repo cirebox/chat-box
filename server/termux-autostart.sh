@@ -1,4 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/bash
-cd /root/workspace/chat-box/server
-pm2 start index.js --name chat-box
+cd /data/data/com.termux/files/home/workspace/chat-box/server
+pm2 start ecosystem.config.js
 pm2 save

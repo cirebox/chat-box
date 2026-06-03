@@ -1130,6 +1130,9 @@ let allMessages = [];
 let lastReadMessageId = null;
 let peerConnection = null;
 let messageAudio = null;
+let userList = [];
+let mentionDropdown = null;
+let mentionStartPos = -1;
 
 function playMessageSound() {
   try {
@@ -1291,6 +1294,10 @@ function handleMessage(msg) {
       handleTypingIndicator(msg);
       break;
       
+    case 'user_list':
+      userList = msg.users || [];
+      break;
+
     case 'chat_cleared':
       messagesDiv.innerHTML = '';
       allMessages = [];
@@ -1855,6 +1862,35 @@ function sendMessage() {
 }
 
 messageInput.addEventListener('keydown', (e) => {
+  if (mentionDropdown && !mentionDropdown.classList.contains('hidden')) {
+    const items = mentionDropdown.querySelectorAll('.mention-item');
+    let selected = mentionDropdown.querySelector('.mention-item.selected');
+    let idx = Array.from(items).indexOf(selected);
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selected) { selected.click(); }
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = (idx + 1) % items.length;
+      if (selected) selected.classList.remove('selected');
+      items[next].classList.add('selected');
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = (idx - 1 + items.length) % items.length;
+      if (selected) selected.classList.remove('selected');
+      items[prev].classList.add('selected');
+      return;
+    }
+    if (e.key === 'Escape') {
+      hideMentionDropdown();
+      return;
+    }
+  }
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
@@ -1920,6 +1956,7 @@ messageInput.addEventListener('input', () => {
   sendTyping();
   messageInput.style.height = 'auto';
   messageInput.style.height = messageInput.scrollHeight + 'px';
+  checkForMention();
 });
 
 const formatToolbar = document.getElementById('format-toolbar');
@@ -2204,6 +2241,70 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+function createMentionDropdown() {
+  const dropdown = document.createElement('div');
+  dropdown.id = 'mention-dropdown';
+  dropdown.className = 'mention-dropdown hidden';
+  document.querySelector('.input-row-main').appendChild(dropdown);
+  return dropdown;
+}
+
+function checkForMention() {
+  const text = messageInput.value;
+  const pos = messageInput.selectionStart;
+  const textBefore = text.substring(0, pos);
+  const atIndex = textBefore.lastIndexOf('@');
+
+  if (atIndex === -1) { hideMentionDropdown(); return; }
+  if (atIndex > 0 && textBefore[atIndex - 1] !== ' ' && textBefore[atIndex - 1] !== '\n') { hideMentionDropdown(); return; }
+
+  const query = textBefore.substring(atIndex + 1);
+  if (query.includes(' ')) { hideMentionDropdown(); return; }
+
+  mentionStartPos = atIndex;
+  showMentionDropdown(query);
+}
+
+function showMentionDropdown(query) {
+  if (!mentionDropdown) mentionDropdown = createMentionDropdown();
+  const filtered = userList.filter(u =>
+    u.name && u.name.toLowerCase().startsWith(query.toLowerCase())
+  ).slice(0, 8);
+  if (filtered.length === 0) { hideMentionDropdown(); return; }
+
+  mentionDropdown.innerHTML = '';
+  filtered.forEach(user => {
+    const item = document.createElement('div');
+    item.className = 'mention-item';
+    item.textContent = `@${user.name}`;
+    item.onclick = () => insertMention(user.name);
+    mentionDropdown.appendChild(item);
+  });
+  mentionDropdown.classList.remove('hidden');
+}
+
+function insertMention(name) {
+  const text = messageInput.value;
+  const before = text.substring(0, mentionStartPos);
+  const after = text.substring(messageInput.selectionStart);
+  messageInput.value = before + `@${name} ` + after;
+  const newPos = before.length + name.length + 2;
+  messageInput.setSelectionRange(newPos, newPos);
+  messageInput.focus();
+  hideMentionDropdown();
+}
+
+function hideMentionDropdown() {
+  if (mentionDropdown) mentionDropdown.classList.add('hidden');
+  mentionStartPos = -1;
+}
+
+document.addEventListener('click', (e) => {
+  if (mentionDropdown && !mentionDropdown.contains(e.target) && e.target !== messageInput) {
+    hideMentionDropdown();
+  }
+});
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

@@ -10,8 +10,7 @@ module.exports = {
     env: {
       NODE_ENV: 'production',
       HTTP_PORT: 8765,
-      WS_PORT: 8766,
-      SERVER_IP: '192.168.0.100'
+      WS_PORT: 8766
     },
     env_development: {
       NODE_ENV: 'development'

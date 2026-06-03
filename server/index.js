@@ -5,6 +5,7 @@ const path = require('path');
 const WebSocket = require('ws');
 const { startDiscoveryServer, broadcastAnnounce } = require('./discovery');
 const db = require('./database');
+db.initDatabase();
 
 const WS_PORT = 8766;
 const HTTP_PORT = 8765;
@@ -76,6 +77,7 @@ function parseTextFormatting(text) {
   
   return text
     .replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/(^|\s)@(\w+)/g, '$1<span class="mention">@$2</span>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<b>$1</b>')
     .replace(/_([^_]+)_/g, '<i>$1</i>')
