@@ -1746,7 +1746,6 @@ body.keyboard-open .messages-container {
 .message-text .mention {
   display: inline-block;
   background: #dcf8c6;
-  color: #128c7e;
   padding: 1px 4px;
   border-radius: 4px;
   font-weight: 600;
@@ -1755,42 +1754,69 @@ body.keyboard-open .messages-container {
 .mention-dropdown {
   position: absolute;
   bottom: 100%;
-  left: 48px;
+  left: 0;
+  right: 0;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 1000;
-  min-width: 160px;
-  animation: fadeIn 0.1s ease-out;
+  border-radius: 12px 12px 0 0;
+  max-height: 40vh;
+  z-index: 200;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.15);
+  animation: fadeIn 0.12s ease-out;
 }
 
 .mention-dropdown.hidden {
   display: none;
 }
 
+.mention-list {
+  overflow-y: auto;
+  max-height: 40vh;
+}
+
+.mention-empty {
+  text-align: center;
+  padding: 24px;
+  color: #999;
+  font-size: 14px;
+}
+
 .mention-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 10px 14px;
   cursor: pointer;
   color: #111b21;
   font-size: 14px;
-  transition: background 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+  transition: background 0.1s;
+}
+
+.mention-item:first-child {
+  border-radius: 12px 12px 0 0;
 }
 
 .mention-item:hover,
 .mention-item.selected {
   background: #f0f2f5;
-  color: #00a884;
-  font-weight: 600;
 }
 
-.mention-item:first-child {
-  border-radius: 8px 8px 0 0;
+.mention-item .mention-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
 }
 
-.mention-item:last-child {
-  border-radius: 0 0 8px 8px;
+.mention-item .mention-name {
+  font-weight: 500;
 }
 
 .emoji-tabs {

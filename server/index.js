@@ -77,7 +77,10 @@ function parseTextFormatting(text) {
   
   return text
     .replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
-    .replace(/(^|\s)@(\w+)/g, '$1<span class="mention">@$2</span>')
+    .replace(/(^|\s)@(\w+)/g, (match, prefix, username) => {
+      const color = getNameColor(username);
+      return `${prefix}<span class="mention" style="color:${color}">@${username}</span>`;
+    })
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<b>$1</b>')
     .replace(/_([^_]+)_/g, '<i>$1</i>')
